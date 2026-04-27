@@ -4,6 +4,8 @@
 //   0 = incoming (server -> client), served by s2c.json
 //   1 = outgoing (client -> server), served by c2s.json
 
+import { customPacketTypesWithField } from '../custom-decoders.js';
+
 let index = null;
 let loading = null;
 
@@ -48,6 +50,7 @@ export function findPacketTypesWithField(fieldName) {
   for (const [id, schema] of index.outgoing) {
     if (schemaHasField(schema.fields, fieldName)) keys.add((1 << 16) | id);
   }
+  for (const key of customPacketTypesWithField(fieldName)) keys.add(key);
   return keys;
 }
 
