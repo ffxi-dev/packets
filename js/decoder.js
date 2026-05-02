@@ -88,14 +88,11 @@ function decodeField(reader, f, context) {
       reader.alignToByte();
       const start = reader.byteOffset;
       const len = f.array_size;
-      const slice = reader.bytes.subarray(
-        start,
-        Math.min(start + len, reader.bytes.length)
-      );
+      const slice = reader.bytes.subarray(start, Math.min(start + len, reader.bytes.length));
       reader.pos += len * 8;
       const nul = slice.indexOf(0);
       const text = new TextDecoder('utf-8', { fatal: false }).decode(
-        nul === -1 ? slice : slice.subarray(0, nul)
+        nul === -1 ? slice : slice.subarray(0, nul),
       );
       return {
         name: f.name,
@@ -108,7 +105,8 @@ function decodeField(reader, f, context) {
 
     const children = [];
     const startPos = reader.pos;
-    const elemBits = f.bits || (f.size_bytes && f.array_size ? (f.size_bytes * 8) / f.array_size : 0);
+    const elemBits =
+      f.bits || (f.size_bytes && f.array_size ? (f.size_bytes * 8) / f.array_size : 0);
 
     for (let i = 0; i < f.array_size; i++) {
       if (f.nested_fields) {
@@ -212,11 +210,7 @@ function readElement(reader, f, bits) {
       reader.pos += 32;
       return null;
     }
-    const view = new DataView(
-      reader.bytes.buffer,
-      reader.bytes.byteOffset + offset,
-      4
-    );
+    const view = new DataView(reader.bytes.buffer, reader.bytes.byteOffset + offset, 4);
     reader.pos += 32;
     return view.getFloat32(0, true);
   }
