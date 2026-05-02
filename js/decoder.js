@@ -15,41 +15,7 @@
 // - `base_type === 'float'` => IEEE 754 single precision, 32 bits, byte-aligned.
 // - `is_enum=true` => read underlying integer, display raw value for now.
 
-class BitReader {
-  constructor(bytes) {
-    this.bytes = bytes;
-    this.pos = 0;
-    this.totalBits = bytes.length * 8;
-  }
-  readBits(n) {
-    if (n === 0) return 0;
-    let value = 0;
-    let mult = 1;
-    while (n > 0) {
-      if (this.pos >= this.totalBits) {
-        this.pos += n;
-        return value;
-      }
-      const byteIndex = this.pos >> 3;
-      const bitIndex = this.pos & 7;
-      const available = 8 - bitIndex;
-      const take = Math.min(n, available);
-      const mask = (1 << take) - 1;
-      const chunk = (this.bytes[byteIndex] >> bitIndex) & mask;
-      value += chunk * mult;
-      mult *= Math.pow(2, take);
-      this.pos += take;
-      n -= take;
-    }
-    return value;
-  }
-  alignToByte() {
-    this.pos = (this.pos + 7) & ~7;
-  }
-  get byteOffset() {
-    return this.pos >> 3;
-  }
-}
+import { BitReader } from './bitreader.js';
 
 export function decode(bytes, packet) {
   const reader = new BitReader(bytes);

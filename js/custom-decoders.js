@@ -5,24 +5,25 @@
 // Register new decoders with: register(direction, packetId, fn)
 // where fn(raw, schemaTree) returns the augmented tree.
 
-import { DIR_IN } from './util.js';
+import { DIR_IN, packetKey } from './util.js';
+import { BitReader } from './parser/bitreader.js';
 
 const registry = new Map();
 
 function register(dir, pid, fn) {
-  registry.set((dir << 16) | (pid & 0xffff), fn);
+  registry.set(packetKey(dir, pid), fn);
 }
 
-// Field names produced by custom decoders, keyed by (dir<<16|pid).
+// Field names produced by custom decoders, keyed by packetKey(dir, pid).
 // Used by findPacketTypesWithField to include custom-decoded fields in filter lookups.
 const fieldNames = new Map();
 
 function registerFields(dir, pid, names) {
-  fieldNames.set((dir << 16) | (pid & 0xffff), new Set(names));
+  fieldNames.set(packetKey(dir, pid), new Set(names));
 }
 
 export function hasCustomDecoder(dir, pid) {
-  return registry.has((dir << 16) | (pid & 0xffff));
+  return registry.has(packetKey(dir, pid));
 }
 
 // Returns packet type keys that have a custom-decoded field with this name.
@@ -35,35 +36,12 @@ export function customPacketTypesWithField(fieldName) {
 }
 
 export function applyCustomDecoder(dir, pid, raw, tree) {
-  const fn = registry.get((dir << 16) | (pid & 0xffff));
+  const fn = registry.get(packetKey(dir, pid));
   if (!fn) return tree;
   try {
     return fn(raw, tree);
   } catch {
     return tree;
-  }
-}
-
-// --- BitReader (LSB-first, matching FFXI's x86 layout) ---
-
-class BitReader {
-  constructor(data) {
-    this.data = data;
-    this.pos = 0;
-  }
-  setBytePos(n) {
-    this.pos = n * 8;
-  }
-  read(bits) {
-    let result = 0;
-    for (let i = 0; i < bits; i++) {
-      const byteIdx = this.pos >> 3;
-      const bitIdx = this.pos & 7;
-      if (byteIdx >= this.data.length) break;
-      result |= ((this.data[byteIdx] >> bitIdx) & 1) << i;
-      this.pos++;
-    }
-    return result;
   }
 }
 

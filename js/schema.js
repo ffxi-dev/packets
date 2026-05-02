@@ -5,6 +5,7 @@
 //   1 = outgoing (client -> server), served by c2s.json
 
 import { customPacketTypesWithField } from '../custom-decoders.js';
+import { DIR_IN, DIR_OUT, packetKey } from '../util.js';
 
 let index = null;
 let loading = null;
@@ -39,16 +40,16 @@ export function isLoaded() {
   return index != null;
 }
 
-// Returns a Set of packet-type keys ((direction << 16) | packetId) for every
+// Returns a Set of packet-type keys (see util.js packetKey) for every
 // packet type whose schema contains a field with the given name (at any depth).
 export function findPacketTypesWithField(fieldName) {
   if (!index) return new Set();
   const keys = new Set();
   for (const [id, schema] of index.incoming) {
-    if (schemaHasField(schema.fields, fieldName)) keys.add((0 << 16) | id);
+    if (schemaHasField(schema.fields, fieldName)) keys.add(packetKey(DIR_IN, id));
   }
   for (const [id, schema] of index.outgoing) {
-    if (schemaHasField(schema.fields, fieldName)) keys.add((1 << 16) | id);
+    if (schemaHasField(schema.fields, fieldName)) keys.add(packetKey(DIR_OUT, id));
   }
   for (const key of customPacketTypesWithField(fieldName)) keys.add(key);
   return keys;
