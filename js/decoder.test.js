@@ -218,7 +218,7 @@ describe('decoder edge cases', () => {
 
   test('attaches error message on internal exception (does not throw)', () => {
     // Provide a malformed schema field — the decoder should catch and record.
-    const fields = [{ name: 'broken', type_name: 'broken', /* missing fields intentionally */ }];
+    const fields = [{ name: 'broken', type_name: 'broken' /* missing fields intentionally */ }];
     const tree = decode(new Uint8Array([0]), packet('P', fields));
     // Doesn't throw — broken field decodes as a zero-bit primitive returning 0.
     expect(tree.children[0]).toBeDefined();
