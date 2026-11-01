@@ -5,8 +5,8 @@
 // Register new decoders with: register(direction, packetId, fn)
 // where fn(raw, schemaTree) returns the augmented tree.
 
-import { DIR_IN, packetKey } from './util.js';
-import { BitReader } from './parser/bitreader.js';
+import { DIR_IN, packetKey } from './keys.js';
+import { BitReader } from './bitreader.js';
 
 const registry = new Map();
 

@@ -14,8 +14,10 @@
 // - `base_type === 'char'` with `array_size` => interpret as a null-terminated string.
 // - `base_type === 'float'` => IEEE 754 single precision, 32 bits, byte-aligned.
 // - `is_enum=true` => read underlying integer, display raw value for now.
+// - A primitive with `bits=0`, such as some enums, is `size_bytes` wide.
 
 import { BitReader } from './bitreader.js';
+import { applyCustomDecoder, hasCustomDecoder } from './custom-decoders.js';
 
 export function decode(bytes, packet) {
   const reader = new BitReader(bytes);
@@ -64,6 +66,7 @@ function decodeField(reader, f, context) {
         name: f.name,
         type: f.type_name,
         value: JSON.stringify(text),
+        text,
         bitOffset,
         bits: len * 8,
       };
@@ -157,14 +160,15 @@ function decodeField(reader, f, context) {
   }
 
   // Primitive (including enums — underlying type is integer)
-  const value = readElement(reader, f, f.bits);
+  const bits = f.bits || (f.size_bytes ?? 0) * 8;
+  const value = readElement(reader, f, bits);
   const typeLabel = f.is_enum ? `${f.type_name} (${f.base_type})` : f.type_name;
   return {
     name: f.name,
     type: typeLabel,
     value,
     bitOffset,
-    bits: f.bits,
+    bits,
   };
 }
 
@@ -198,4 +202,55 @@ function readIntBits(reader, bits, signed) {
     if (v >= signBit) v -= Math.pow(2, bits);
   }
   return v;
+}
+
+// Bytes a packet needs to fit `packet`: everything but a trailing run of arrays and unions, whose real
+// length varies, such as an NPC update's name. A shorter packet, such as stubbed chat, is not decoded.
+const minBytesCache = new WeakMap();
+export function minBytes(packet) {
+  let n = minBytesCache.get(packet);
+  if (n === undefined) {
+    const fields = [...packet.fields];
+    while (fields.length && (fields.at(-1).array_size != null || fields.at(-1).is_union))
+      fields.pop();
+    n = Math.ceil(decode(new Uint8Array(0), { ...packet, fields }).bits / 8);
+    minBytesCache.set(packet, n);
+  }
+  return n;
+}
+
+// What Lens shows for a packet: the layout's fields, then a custom decoder's, if the opcode has one. A
+// packet too short for its layout gets an error and no fields.
+export function decodePacket(raw, packet, direction, packetId) {
+  const need = minBytes(packet);
+  if (raw.length < need) {
+    return {
+      name: packet.name,
+      type: packet.id,
+      bitOffset: 0,
+      bits: 0,
+      children: [],
+      error: `${raw.length} bytes is too short for this layout, which needs ${need}`,
+    };
+  }
+  const tree = decode(raw, packet);
+  return hasCustomDecoder(direction, packetId)
+    ? applyCustomDecoder(direction, packetId, raw, tree)
+    : tree;
+}
+
+// The decoded values by path, such as `SendFlg.Position`, `GrapIDTbl[3]` or `Data.name`: what a test
+// case lists. Text is plain, not quoted; a union with no matching variant has no value.
+export function fields(tree) {
+  const out = {};
+  const walk = (node, path) => {
+    for (const c of node.children ?? []) {
+      const p = c.name.startsWith('[') ? path + c.name : path ? `${path}.${c.name}` : c.name;
+      if (c.children) walk(c, p);
+      else if (c.text !== undefined) out[p] = c.text;
+      else if (typeof c.value === 'number' || c.value === null) out[p] = c.value;
+    }
+  };
+  walk(tree, '');
+  return out;
 }
