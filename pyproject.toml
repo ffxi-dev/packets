@@ -1,0 +1,29 @@
+[project]
+name = "ffxi-packets"
+version = "1.0.0"
+description = "FFXI packet definitions and the Python decoder Scholar uses"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.11"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["python/ffxi_packets"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"schemas" = "ffxi_packets/schemas"
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+
+[tool.ruff]
+line-length = 110
+src = ["python"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
