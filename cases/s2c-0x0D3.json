@@ -1,0 +1,61 @@
+[
+{
+  "capture": "QWFQtl0r5ciu",
+  "index": 8770,
+  "client_version": "Version 16:42:16 Apr  1 2026",
+  "direction": "s2c",
+  "opcode": "0x0D3",
+  "hex": "d31e37054a4f080000000000a40400000000000000014e6f75727300000000000000000000000000000000000000000000003c0156656c6f63697261",
+  "fields": {
+    "id": 211,
+    "size": 15,
+    "sync": 1335,
+    "LootUniqueNo": 544586,
+    "EntryUniqueNo": 0,
+    "LootActIndex": 1188,
+    "LootPoint": 0,
+    "EntryActIndex": 0,
+    "EntryFlg": 0,
+    "EntryPoint": 0,
+    "TrophyItemIndex": 0,
+    "JudgeFlg": 1,
+    "sLootName": "Nours",
+    "padding00[0]": 108,
+    "padding00[1]": 111,
+    "padding00[2]": 99,
+    "padding00[3]": 105,
+    "padding00[4]": 114,
+    "padding00[5]": 97
+  }
+}
+,
+{
+  "capture": "QWFQtl0r5ciu",
+  "index": 10477,
+  "client_version": "Version 16:42:16 Apr  1 2026",
+  "direction": "s2c",
+  "opcode": "0x0D3",
+  "hex": "d31eb305bd4f080000000000a60400000000000001014e6f75757572730000000000000000000000000006004a4f0800000091010000000000000000",
+  "fields": {
+    "id": 211,
+    "size": 15,
+    "sync": 1459,
+    "LootUniqueNo": 544701,
+    "EntryUniqueNo": 0,
+    "LootActIndex": 1190,
+    "LootPoint": 0,
+    "EntryActIndex": 0,
+    "EntryFlg": 0,
+    "EntryPoint": 0,
+    "TrophyItemIndex": 1,
+    "JudgeFlg": 1,
+    "sLootName": "Nouuurs",
+    "padding00[0]": 0,
+    "padding00[1]": 0,
+    "padding00[2]": 0,
+    "padding00[3]": 0,
+    "padding00[4]": 0,
+    "padding00[5]": 0
+  }
+}
+]
