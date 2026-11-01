@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  js:
+    uses: ffxi-dev/vault/.github/workflows/node.yml@ci/v1.13
+    with:
+      scripts: lint format:check test
+
+  python:
+    runs-on: [self-hosted, lsb]
+    # lsb's runner keeps a home directory; packages there must not leak into the job.
+    env:
+      PYTHONNOUSERSITE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { version: '0.13.6', python-version: '3.13' }
+      - run: uv sync --frozen
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen ruff format --check .
+      - run: uv run --frozen pytest -q
