@@ -1,0 +1,54 @@
+[
+  {
+    "capture": "AIxeAsqgUD5p",
+    "index": 229,
+    "client_version": "30261006_0",
+    "direction": "c2s",
+    "opcode": "0x015",
+    "hex": "15100a003bdfbbc15076d83fcd8c84c2d80101001d0000005103de9000000000",
+    "fields": {
+      "id": 21,
+      "size": 8,
+      "sync": 10,
+      "x": -23.483999252319336,
+      "z": 1.691110610961914,
+      "y": -66.2750015258789,
+      "MovTime": 472,
+      "MoveFlame": 1,
+      "dir": 29,
+      "TargetMode": 0,
+      "RunMode": 0,
+      "GroundMode": 0,
+      "unused": 0,
+      "facetarget": 0,
+      "TimeNow": 2430468945,
+      "padding00": 0
+    }
+  },
+  {
+    "capture": "QWFQtl0r5ciu",
+    "index": 2,
+    "client_version": "Version 16:42:16 Apr  1 2026",
+    "direction": "c2s",
+    "opcode": "0x015",
+    "hex": "15105801e36d0bc33fac98c00ab07041000001005b00a4044e3217c200000000",
+    "fields": {
+      "id": 21,
+      "size": 8,
+      "sync": 344,
+      "x": -139.4292449951172,
+      "z": -4.771026134490967,
+      "y": 15.042978286743164,
+      "MovTime": 0,
+      "MoveFlame": 1,
+      "dir": 91,
+      "TargetMode": 0,
+      "RunMode": 0,
+      "GroundMode": 0,
+      "unused": 0,
+      "facetarget": 1188,
+      "TimeNow": 3256300110,
+      "padding00": 0
+    }
+  }
+]

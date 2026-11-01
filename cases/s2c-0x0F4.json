@@ -1,0 +1,22 @@
+[
+  {
+    "capture": "QWFQtl0r5ciu",
+    "index": 35,
+    "client_version": "Version 16:42:16 Apr  1 2026",
+    "direction": "s2c",
+    "opcode": "0x0F4",
+    "hex": "f40e5f01010043021d00ecff56656c6f6369726170746f7200000000",
+    "fields": {
+      "id": 244,
+      "size": 7,
+      "sync": 351,
+      "TrackingListTbl.ActIndex": 1,
+      "TrackingListTbl.Level": 67,
+      "TrackingListTbl.Type": 2,
+      "TrackingListTbl.unused": 0,
+      "TrackingListTbl.x": 29,
+      "TrackingListTbl.z": -20,
+      "TrackingListTbl.sName": "Velociraptor"
+    }
+  }
+]
