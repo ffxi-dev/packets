@@ -36,10 +36,6 @@ export function lookup(direction, packetId) {
   return map.get(packetId) || null;
 }
 
-export function isLoaded() {
-  return index != null;
-}
-
 // Returns a Set of packet-type keys (see util.js packetKey) for every
 // packet type whose schema contains a field with the given name (at any depth).
 export function findPacketTypesWithField(fieldName) {
