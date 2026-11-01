@@ -6,6 +6,10 @@
     "direction": "s2c",
     "opcode": "0x017",
     "hex": "17261105",
-    "fields": null
+    "fields": {
+      "id": 23,
+      "size": 19,
+      "sync": 1297
+    }
   }
 ]

@@ -98,8 +98,7 @@
       "BtTargetID": 0,
       "SubKind": 0,
       "Status": 0,
-      "Data.model_id": 327,
-      "Data.name": ""
+      "Data.model_id": 327
     }
   },
   {
@@ -414,8 +413,7 @@
       "BtTargetID": 0,
       "SubKind": 0,
       "Status": 0,
-      "Data.model_id": 316,
-      "Data.name": ""
+      "Data.model_id": 316
     }
   },
   {
@@ -730,8 +728,7 @@
       "BtTargetID": 544586,
       "SubKind": 0,
       "Status": 0,
-      "Data.model_id": 316,
-      "Data.name": ""
+      "Data.model_id": 316
     }
   }
 ]

@@ -1,5 +1,8 @@
 """Decodes packets as js/decoder.js does, field for field.
 
+A field past the packet's end has no value, since many packets send only some parts of their layout: a
+number needs all its bits inside the packet, and text keeps what is inside, with empty text having none.
+
 Fixed layouts decode a whole column of packets at once: numpy reads each field from every packet with
 shifts and masks. Layouts whose size varies (a union smaller than its variants) and opcodes with a
 custom decoder, such as 0x028, decode packet by packet. Field names are paths, such as
@@ -9,7 +12,6 @@ custom decoder, such as 0x028, decode packet by packet. Field names are paths, s
 from __future__ import annotations
 
 import json
-import math
 import re
 import struct
 from collections import Counter
@@ -103,10 +105,10 @@ def _path(prefix: str, name: str) -> str:
     return prefix + name if name.startswith("[") or not prefix else f"{prefix}.{name}"
 
 
-def _text(data: bytes) -> str:
+def _text(data: bytes) -> str | None:
     # TextDecoder drops a leading byte order mark.
     data = data.split(b"\0", 1)[0]
-    return data.removeprefix(b"\xef\xbb\xbf").decode("utf-8", "replace")
+    return data.removeprefix(b"\xef\xbb\xbf").decode("utf-8", "replace") or None
 
 
 def _read_element(r: _Reader, f: dict, bits: int):
@@ -119,6 +121,9 @@ def _read_element(r: _Reader, f: dict, bits: int):
         return struct.unpack_from("<f", r.raw, off)[0]
     if bits <= 0:
         return 0
+    if r.pos + bits > len(r.raw) * 8:
+        r.pos += bits
+        return None
     v = r.read(bits)
     # js/decoder.js applies the sign only up to 53 bits.
     if f.get("signed") and bits <= 53 and v >= 1 << (bits - 1):
@@ -149,14 +154,14 @@ def _decode_field(r: _Reader, f: dict, path: str, out: dict, context: dict):
             r.align()
             start = r.pos >> 3
             r.pos += n * 8
-            out[path] = _text(r.raw[start : start + n])
-            return out[path]
+            _put(out, path, _text(r.raw[start : start + n]))
+            return out.get(path)
         bits = _elem_bits(f)
         for i in range(n):
             if f.get("nested_fields"):
                 _decode_fields(r, f["nested_fields"], f"{path}[{i}]", out)
             else:
-                out[f"{path}[{i}]"] = _read_element(r, f, bits)
+                _put(out, f"{path}[{i}]", _read_element(r, f, bits))
         return None
     if f.get("nested_fields"):
         _decode_fields(r, f["nested_fields"], path, out)
@@ -177,35 +182,18 @@ def _decode_field(r: _Reader, f: dict, path: str, out: dict, context: dict):
             r.pos = start + union_bits
         return None
     value = _read_element(r, f, f.get("bits") or (f.get("size_bytes") or 0) * 8)
-    out[path] = value
+    _put(out, path, value)
     return value
 
 
-_min_bytes_cache: dict[int, tuple[dict, int]] = {}
+def _put(out: dict, path: str, value) -> None:
+    if value is not None:
+        out[path] = value
 
 
-def min_bytes(layout: dict) -> int:
-    """Bytes a packet needs to fit `layout`: everything but a trailing run of arrays and unions, whose
-    real length varies, such as an NPC update's name. A shorter packet, such as stubbed chat, is not
-    decoded."""
-    cached = _min_bytes_cache.get(id(layout))
-    if cached and cached[0] is layout:
-        return cached[1]
-    fields = list(layout["fields"])
-    while fields and (fields[-1].get("array_size") is not None or fields[-1].get("is_union")):
-        fields.pop()
-    r = _Reader(b"")
-    _decode_fields(r, fields, "", {})
-    n = math.ceil(r.pos / 8)
-    _min_bytes_cache[id(layout)] = (layout, n)
-    return n
-
-
-def decode_packet(raw: bytes, layout: dict, direction: int, opcode: int) -> dict | None:
-    """One packet's fields by path, or None when it is too short for `layout`."""
+def decode_packet(raw: bytes, layout: dict, direction: int, opcode: int) -> dict:
+    """One packet's fields by path; those with no value are left out."""
     raw = bytes(raw)
-    if len(raw) < min_bytes(layout):
-        return None
     out: dict = {}
     _decode_fields(_Reader(raw), layout["fields"], "", out)
     custom = _CUSTOM.get((direction, opcode))
@@ -354,7 +342,7 @@ class _Columns:
         if f.get("signed") and bits <= 53:
             v = v.astype(np.int64)
             v = np.where(v >= 1 << (bits - 1), v - (1 << bits), v)
-        return v, None, pos + bits
+        return v, self.lengths[rows] * 8 >= pos + bits, pos + bits
 
     def fields(self, rows: np.ndarray, fields: list, pos: int, prefix: str) -> int:
         context = {}
@@ -369,7 +357,8 @@ class _Columns:
                 pos = (pos + 7) & ~7
                 start = pos >> 3
                 block = self.mat[rows, start : start + n]
-                self.put(path, rows, np.array([_text(b.tobytes()) for b in block], dtype=object))
+                texts = np.array([_text(b.tobytes()) for b in block], dtype=object)
+                self.put(path, rows, texts, texts != None)  # noqa: E711, elementwise
                 return pos + n * 8
             bits = int(_elem_bits(f))
             for i in range(n):
@@ -384,22 +373,23 @@ class _Columns:
         if f.get("is_union") and isinstance(f.get("union_variants"), list):
             disc = context.get(f.get("discriminator_field"))
             if disc is not None:
+                values, valid = disc
                 for v in f["union_variants"]:
-                    sub = rows[disc == v["discriminator_value"]]
+                    sub = rows[(values == v["discriminator_value"]) & (True if valid is None else valid)]
                     if len(sub):
                         self.fields(sub, v["fields"], pos, path)
             return pos + (f.get("size_bytes") or 0) * 8
         vals, valid, end = self.element(rows, f, f.get("bits") or (f.get("size_bytes") or 0) * 8, pos)
         self.put(path, rows, vals, valid)
-        context[f["name"]] = vals
+        context[f["name"]] = (vals, valid)
         return end
 
 
 def decode_column(raws: Sequence[bytes], layout: dict) -> dict[str, np.ndarray]:
-    """Every packet's fields at once, for a layout `is_fixed` accepts and packets that fit it.
+    """Every packet's fields at once, for a layout `is_fixed` accepts.
 
     Returns a column per field path. A column is a masked array where some packets have no value: a
-    union field another variant holds, or a float past the packet's end.
+    field past the packet's end, or a union field another variant holds.
     """
     n = len(raws)
     lengths = np.fromiter((len(r) for r in raws), dtype=np.int64, count=n)
@@ -419,35 +409,30 @@ def decode_column(raws: Sequence[bytes], layout: dict) -> dict[str, np.ndarray]:
 
 
 class Decoder:
-    """Decodes a capture's packets one opcode at a time, and counts those that do not fit their layout
-    by client version, direction and opcode in `undecoded`."""
+    """Decodes a capture's packets one opcode at a time, and counts them in `sizes` by client version,
+    direction, opcode, and size: a size seen only in older client versions shows a layout that changed."""
 
     def __init__(self, definitions: Definitions | None = None):
         self.definitions = definitions or Definitions.load()
-        self.undecoded: Counter = Counter()
+        self.sizes: Counter = Counter()
 
     def decode(
         self, client_version: str | None, direction: int, opcode: int, raws: Sequence[bytes]
-    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
-        """Returns which packets were decoded, and a column per field for those packets, in order.
-
-        A packet with no layout, or too short for its layout, is not decoded; only the second is counted.
-        """
+    ) -> dict[str, np.ndarray]:
+        """A column per field path for these packets, in order; masked where a packet has no value.
+        An opcode with no layout gets no columns."""
+        sizes, counts = np.unique([len(r) for r in raws], return_counts=True)
+        for size, count in zip(sizes.tolist(), counts.tolist(), strict=True):
+            self.sizes[(client_version, _NAMES[direction], opcode, size)] += count
         layout = self.definitions.lookup(direction, opcode, client_version)
         if layout is None:
-            return np.zeros(len(raws), dtype=bool), {}
-        need = min_bytes(layout)
-        fits = np.fromiter((len(r) >= need for r in raws), dtype=bool, count=len(raws))
-        misfits = int((~fits).sum())
-        if misfits:
-            self.undecoded[(client_version, _NAMES[direction], opcode)] += misfits
-        kept = [r for r, ok in zip(raws, fits, strict=True) if ok]
+            return {}
         if is_fixed(layout, direction, opcode):
-            return fits, decode_column(kept, layout)
-        rows = [decode_packet(r, layout, direction, opcode) for r in kept]
+            return decode_column(raws, layout)
+        rows = [decode_packet(r, layout, direction, opcode) for r in raws]
         columns = {}
         for path in dict.fromkeys(p for row in rows for p in row):
             vals = np.array([row.get(path) for row in rows], dtype=object)
             has = np.fromiter((path in row for row in rows), dtype=bool, count=len(rows))
             columns[path] = vals if has.all() else np.ma.array(vals, mask=~has)
-        return fits, columns
+        return columns

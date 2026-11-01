@@ -30,7 +30,7 @@ def args(c):
 
 def plain(v):
     """A value as the case file stores it: JSON has no NaN, and numpy scalars become Python ones."""
-    if v is None or v is np.ma.masked:
+    if v is None:
         return None
     v = v.item() if isinstance(v, np.generic) else v
     return None if isinstance(v, float) and math.isnan(v) else v
@@ -39,26 +39,20 @@ def plain(v):
 def by_packet(c, defs=DEFS):
     direction, opcode, raw = args(c)
     layout = defs.lookup(direction, opcode, c["client_version"])
-    fields = decode_packet(raw, layout, direction, opcode)
-    return None if fields is None else {k: plain(v) for k, v in fields.items()}
+    return {k: plain(v) for k, v in decode_packet(raw, layout, direction, opcode).items()}
 
 
 def by_column(cases, defs=DEFS):
     """Decodes cases of one opcode and version together, as Scholar does a capture's packets."""
     direction, opcode, _ = args(cases[0])
     decoder = Decoder(defs)
-    fits, cols = decoder.decode(cases[0]["client_version"], direction, opcode, [args(c)[2] for c in cases])
-    rows = iter(range(int(fits.sum())))
-    out = []
-    for ok in fits:
-        if not ok:
-            out.append(None)
-            continue
-        i = next(rows)
-        values = {k: plain(col[i]) for k, col in cols.items()}
-        # A column holds every path any packet has; a packet's own fields are those with a value.
-        out.append({k: v for k, v in values.items() if v is not None or not np.ma.is_masked(cols[k][i])})
-    return out, decoder.undecoded
+    cols = decoder.decode(cases[0]["client_version"], direction, opcode, [args(c)[2] for c in cases])
+    # A column holds every path any packet has; a packet's own fields are those with a value.
+    rows = [
+        {k: plain(col[i]) for k, col in cols.items() if not np.ma.is_masked(col[i])}
+        for i in range(len(cases))
+    ]
+    return rows, decoder.sizes
 
 
 @pytest.mark.parametrize("case", list(all_cases()))
@@ -72,10 +66,7 @@ def test_columns(name):
     for c in load(name):
         groups.setdefault(c["client_version"], []).append(c)
     for cases in groups.values():
-        got, undecoded = by_column(cases)
-        assert got == [c["fields"] for c in cases]
-        misfits = sum(c["fields"] is None for c in cases)
-        assert sum(undecoded.values()) == misfits
+        assert by_column(cases)[0] == [c["fields"] for c in cases]
 
 
 def test_layouts_by_client_version():
@@ -86,10 +77,12 @@ def test_layouts_by_client_version():
         assert by_column([c], defs)[0] == [c["fields"]], c["note"]
 
 
-def test_undecoded_counted_by_version_and_opcode():
-    c = load("versions.json")["cases"][-1]
-    defs = Definitions(
-        load("../schemas/s2c.json"), load("../schemas/c2s.json"), load("versions.json")["layouts"]
-    )
-    _, undecoded = by_column([c, c], defs)
-    assert undecoded == {("30251101_2", "s2c", 0x0F4): 2}
+def test_packets_counted_by_version_opcode_and_size():
+    npc = [c for c in load("s2c-0x00E.json") if c["capture"] == "QWFQtl0r5ciu"]
+    _, sizes = by_column(npc)
+    version = npc[0]["client_version"]
+    assert sizes == {
+        (version, "s2c", 0x00E, 56): 2,
+        (version, "s2c", 0x00E, 64): 1,
+        (version, "s2c", 0x00E, 84): 1,
+    }

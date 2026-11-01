@@ -9,7 +9,6 @@ from .decoder import (
     decode_column,
     decode_packet,
     is_fixed,
-    min_bytes,
 )
 
 __all__ = [
@@ -20,5 +19,4 @@ __all__ = [
     "decode_column",
     "decode_packet",
     "is_fixed",
-    "min_bytes",
 ]

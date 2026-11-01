@@ -1,5 +1,5 @@
 export { BitReader } from './bitreader.js';
-export { decode, decodePacket, fields, minBytes } from './decoder.js';
+export { decode, decodePacket, fields } from './decoder.js';
 export {
   applyCustomDecoder,
   customPacketTypesWithField,

@@ -209,11 +209,17 @@ describe('decoder unions', () => {
 });
 
 describe('decoder edge cases', () => {
-  test('returns zero-padded values past EOF', () => {
-    // Schema asks for 3 bytes, only 1 provided.
-    const buf = new Uint8Array([0xab]);
-    const tree = decode(buf, packet('P', [u('a', 8), u('b', 8), u('c', 8)]));
-    expect(tree.children.map((c) => c.value)).toEqual([0xab, 0, 0]);
+  test('gives fields past the end no value', () => {
+    // Schema asks for 4 bytes, only 2 provided: b runs past the end.
+    const buf = new Uint8Array([0xab, 0xcd]);
+    const tree = decode(buf, packet('P', [u('a', 8), u('b', 16), u('c', 8), charArr('s', 4)]));
+    expect(tree.children.map((c) => c.value)).toEqual([0xab, null, null, null]);
+  });
+
+  test('keeps the part of a text that is inside the packet', () => {
+    const buf = new Uint8Array([0x41, 0x42]);
+    const tree = decode(buf, packet('P', [charArr('s', 16)]));
+    expect(tree.children[0].text).toBe('AB');
   });
 
   test('attaches error message on internal exception (does not throw)', () => {

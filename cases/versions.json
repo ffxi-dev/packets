@@ -216,8 +216,18 @@
       "opcode": "0x0F4",
       "hex": "f40e5f01010043021d00ecff56656c6f6369726170746f7200000000",
       "client_version": "30251101_2",
-      "note": "28 bytes, and the test layout needs 32: undecoded",
-      "fields": null
+      "note": "28 bytes, and the test layout runs to 32: its last field has no value",
+      "fields": {
+        "id": 244,
+        "size": 7,
+        "sync": 351,
+        "a": 37945345,
+        "b": 4293656605,
+        "c": 1869374806,
+        "d": 1634888035,
+        "e": 1919906928,
+        "f": 0
+      }
     }
   ]
 }
