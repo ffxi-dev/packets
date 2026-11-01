@@ -19,11 +19,19 @@ describe('test cases', () => {
   const files = readdirSync(new URL('../cases', import.meta.url)).filter((f) =>
     f.endsWith('.json'),
   );
-  for (const file of files) {
+  for (const file of files.filter((f) => f !== 'versions.json')) {
     for (const c of read(`cases/${file}`)) {
       test(`${c.direction} ${c.opcode} ${c.capture}#${c.index}`, () => {
         expect(decodeCase(c)).toEqual(c.fields);
       });
     }
   }
+});
+
+describe('layouts by client version', () => {
+  const { layouts, cases } = read('cases/versions.json');
+  test.each(cases.map((c) => [c.client_version, c]))('%s', (_, c) => {
+    setSchemas({ s2c: read('schemas/s2c.json'), c2s: read('schemas/c2s.json'), layouts });
+    expect(decodeCase(c)).toEqual(c.fields);
+  });
 });
