@@ -1,0 +1,22 @@
+[
+{
+  "capture": "h3Eu8ohjSCFE",
+  "index": 168665,
+  "client_version": "30261006_0",
+  "direction": "s2c",
+  "opcode": "0x0DC",
+  "hex": "dc10c2091bb60a008d040400486f61707265736964656e740000000006006400",
+  "fields": {
+    "id": 220,
+    "size": 8,
+    "sync": 2498,
+    "UniqueNo": 701979,
+    "ActIndex": 1165,
+    "AnonFlag": 4,
+    "Kind": 0,
+    "sName": "Hoapresident",
+    "RaceNo": 6,
+    "unknown1E": 100
+  }
+}
+]
