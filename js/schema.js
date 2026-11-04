@@ -1,9 +1,9 @@
 // Loads XiPackets definitions and picks an opcode's layout for a client version.
 //
-// s2c.json and c2s.json are synced from sruon/XiPackets-definitions and describe today's retail.
+// s2c.json and c2s.json describe today's retail.
 // layouts.json holds older layouts, each an XiPackets entry with a `direction` ("s2c" or "c2s") and
 // `until` (the first client version that no longer uses it) or `from` (the first that does). The first
-// entry that applies wins; with none, the synced layout applies.
+// entry that applies wins; with none, today's layout applies.
 
 import { customPacketTypesWithField } from './custom-decoders.js';
 import { DIR_IN, DIR_OUT, packetKey } from './keys.js';
