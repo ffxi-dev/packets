@@ -39,7 +39,7 @@ def _version_key(v: str | None) -> tuple[int, int] | None:
 
 
 class Definitions:
-    """The synced XiPackets layouts, and older ones from layouts.json picked by client version.
+    """Today's XiPackets layouts, and older ones from layouts.json picked by client version.
 
     An older layout has `until` (the first client version that no longer uses it) or `from` (the first
     that does). The first that applies wins; with none, or for a version that does not read as
