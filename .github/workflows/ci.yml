@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v6
-        with: { version: '0.13.6', python-version: '3.13' }
+        with: { version: '0.13.7', python-version: '3.13' }
       - run: uv sync --frozen
       - run: uv run --frozen ruff check .
       - run: uv run --frozen ruff format --check .
