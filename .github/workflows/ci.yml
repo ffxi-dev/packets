@@ -17,7 +17,7 @@ jobs:
     env:
       PYTHONNOUSERSITE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v6
         with: { version: '0.13.6', python-version: '3.13' }
       - run: uv sync --frozen
