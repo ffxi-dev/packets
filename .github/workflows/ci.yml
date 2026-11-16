@@ -7,7 +7,7 @@ on:
 
 jobs:
   js:
-    uses: ffxi-dev/vault/.github/workflows/node.yml@ci/v1.15
+    uses: ffxi-dev/vault/.github/workflows/node.yml@ci/v1.16
     with:
       scripts: lint format:check test
 
