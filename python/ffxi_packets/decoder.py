@@ -1,7 +1,7 @@
 """Decodes packets as js/decoder.js does, field for field.
 
 A field past the packet's end has no value, since many packets send only some parts of their layout: a
-number needs all its bits inside the packet, and text keeps what is inside, with empty text having none.
+number needs all its bits inside the packet, and text keeps what is inside; empty text has none.
 
 Fixed layouts decode a whole column of packets at once: numpy reads each field from every packet with
 shifts and masks. Layouts whose size varies (a union smaller than its variants) and opcodes with a
@@ -393,7 +393,7 @@ def decode_column(raws: Sequence[bytes], layout: dict) -> dict[str, np.ndarray]:
     0x028's, come only from decode_packet and Decoder.decode.
 
     Returns a column per field path. A column is a masked array where some packets have no value: a
-    field past the packet's end, or a union field another variant holds.
+    field past the packet's end, empty text, or a union field another variant holds.
     """
     if _fixed_end(layout["fields"], 0) is None:
         raise ValueError(f"{layout.get('name')}'s offsets depend on the data: decode it with decode_packet")

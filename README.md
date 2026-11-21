@@ -26,7 +26,7 @@ const layout = lookup(DIR_IN, 0x00e, '30261006_0');
 fields(decodePacket(bytes, layout, DIR_IN, 0x00e))['UniqueNo'];
 ```
 
-Pin a release tag: a release changes what a packet decodes to, and both decoders move together.
+Pin a release tag: releases change what packets decode to, and both decoders move together.
 
 ## Work on it
 

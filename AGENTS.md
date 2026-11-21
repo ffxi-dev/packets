@@ -34,7 +34,7 @@ CI (`.github/workflows/ci.yml`) runs both on every pull request.
 
 ## Part of Vault
 
-This repository is one brick of Vault, the owner's platform for capturing retail FFXI and keeping the captures for the long term. The core repository is `ffxi-dev/vault`; the bricks are `lens`, `res`, `xicap`, `pilot`, `patch`, `mogsafe`, `memoria`, `packets`, and `scholar`.
+This repository is one brick of Vault, the owner's platform for capturing retail FFXI and keeping the captures. The core repository is `ffxi-dev/vault`; the bricks are `lens`, `res`, `xicap`, `pilot`, `patch`, `mogsafe`, `memoria`, `packets`, and `scholar`.
 
 - **CI** is this repository's own: it is public, and the shared workflows in `ffxi-dev/vault` are private.
 - **Contracts** come from `ffxi-dev/vault` at a tagged release. Pin a tag; never copy a schema in.

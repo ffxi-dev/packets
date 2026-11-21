@@ -1,6 +1,6 @@
 // Loads XiPackets definitions and picks an opcode's layout for a client version.
 //
-// s2c.json and c2s.json describe today's retail.
+// s2c.json and c2s.json hold today's retail layouts.
 // layouts.json holds older layouts, each an XiPackets entry with a `direction` ("s2c" or "c2s") and
 // `until` (the first client version that no longer uses it) or `from` (the first that does). The first
 // entry that applies wins; with none, today's layout applies.
@@ -71,8 +71,8 @@ export function lookup(direction, packetId, clientVersion) {
   return older ?? index[direction === DIR_IN ? DIR_IN : DIR_OUT].get(packetId) ?? null;
 }
 
-// Returns a Set of packet-type keys (see keys.js packetKey) for every
-// packet type whose schema contains a field with the given name (at any depth).
+// The packetKey of every packet type with a field of this name, at any depth, custom decoders'
+// fields included.
 export function findPacketTypesWithField(fieldName) {
   if (!index) return new Set();
   const keys = new Set();
