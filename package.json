@@ -2,6 +2,7 @@
   "name": "@ffxi-dev/packets",
   "version": "1.6.0",
   "description": "FFXI packet definitions and the JavaScript decoder Lens uses",
+  "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
   "exports": {

@@ -198,12 +198,7 @@ def decode_packet(raw: bytes, layout: dict, direction: int, opcode: int) -> dict
     _decode_fields(_Reader(raw), layout["fields"], "", out)
     custom = _CUSTOM.get((direction, opcode))
     if custom:
-        try:
-            extra: dict = {}
-            custom(raw, extra)
-            out.update(extra)
-        except Exception:  # js/custom-decoders.js keeps the layout's fields when its decoder fails
-            pass
+        custom(raw, out)  # _Reader reads zeros past the end, so a short packet cannot make it raise
     return out
 
 

@@ -5,14 +5,19 @@ on:
     branches: [main]
   pull_request:
 
+# lsb's runners while the repository is private; they refuse public repositories, which GitHub's run free.
 jobs:
   js:
-    uses: ffxi-dev/vault/.github/workflows/node.yml@ci/v1.15
-    with:
-      scripts: lint format:check test
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted","lsb"]') || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+      - run: npm run lint && npm run format:check && npm test
 
   python:
-    runs-on: [self-hosted, lsb]
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted","lsb"]') || 'ubuntu-latest' }}
     # lsb's runner keeps a home directory; packages there must not leak into the job.
     env:
       PYTHONNOUSERSITE: '1'
