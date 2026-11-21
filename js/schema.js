@@ -30,10 +30,17 @@ export function setSchemas({ s2c, c2s, layouts = [] }) {
 export async function loadSchemas(base = '/schemas') {
   if (index) return index;
   loading ??= (async () => {
-    const get = (name) => fetch(`${base}/${name}.json`).then((r) => r.json());
+    const get = async (name) => {
+      const r = await fetch(`${base}/${name}.json`);
+      if (!r.ok) throw new Error(`${base}/${name}.json: ${r.status}`);
+      return r.json();
+    };
     const [s2c, c2s, layouts] = await Promise.all([get('s2c'), get('c2s'), get('layouts')]);
     return setSchemas({ s2c, c2s, layouts });
-  })();
+  })().catch((e) => {
+    loading = null; // a failed load is tried again on the next call
+    throw e;
+  });
   return loading;
 }
 

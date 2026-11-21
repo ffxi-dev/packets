@@ -222,12 +222,15 @@ describe('decoder edge cases', () => {
     expect(tree.children[0].text).toBe('AB');
   });
 
-  test('attaches error message on internal exception (does not throw)', () => {
-    // Provide a malformed schema field — the decoder should catch and record.
-    const fields = [{ name: 'broken', type_name: 'broken' /* missing fields intentionally */ }];
+  test('a field with no width decodes as a zero-bit 0', () => {
+    const fields = [{ name: 'broken', type_name: 'broken' }];
     const tree = decode(new Uint8Array([0]), packet('P', fields));
-    // Doesn't throw — broken field decodes as a zero-bit primitive returning 0.
-    expect(tree.children[0]).toBeDefined();
+    expect(tree.children[0]).toMatchObject({ name: 'broken', value: 0, bits: 0 });
+  });
+
+  test('a layout the decoder cannot walk leaves its error on the tree instead of throwing', () => {
+    const tree = decode(new Uint8Array([0]), { name: 'P', id: '0x001', fields: null });
+    expect(tree.error).toMatch(/not iterable/);
   });
 
   test('root node exposes total bits read', () => {

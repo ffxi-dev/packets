@@ -2,8 +2,8 @@
 // that the schema can't describe. Each decoder augments the schema-decoded
 // tree with additional children parsed from the bitstream.
 //
-// Register new decoders with: register(direction, packetId, fn)
-// where fn(raw, schemaTree) returns the augmented tree.
+// A decoder is register(direction, packetId, fn), fn(raw, schemaTree) returning the augmented tree, and
+// registerFields with the field names it adds, for findPacketTypesWithField.
 
 import { DIR_IN, packetKey } from './keys.js';
 import { BitReader } from './bitreader.js';
@@ -100,14 +100,6 @@ registerFields(DIR_IN, 0x028, [
   'value',
   'message',
   'bit',
-  'proc_kind',
-  'proc_info',
-  'proc_value',
-  'proc_message',
-  'react_kind',
-  'react_info',
-  'react_value',
-  'react_message',
 ]);
 
 register(DIR_IN, 0x028, (raw, tree) => {

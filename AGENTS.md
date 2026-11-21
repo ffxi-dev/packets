@@ -14,7 +14,7 @@ uv run ruff check . && uv run ruff format --check . && uv run pytest -q   # Pyth
 node scripts/case.mjs <s2c|c2s> <opcode> <client version> <hex> [capture] [index]   # print a test case
 ```
 
-CI (`.github/workflows/ci.yml`) runs both on lsb.
+CI (`.github/workflows/ci.yml`) runs both on every pull request.
 
 ## Layout
 
@@ -34,11 +34,11 @@ CI (`.github/workflows/ci.yml`) runs both on lsb.
 
 ## Part of Vault
 
-This repository is one brick of Vault, the owner's platform for capturing retail FFXI and keeping the captures for the long term. The core repository is `ffxi-dev/vault`; the bricks are `lens`, `res`, `xicap`, `pilot`, `patch`, `mogsafe`, `memoria`, `packets`, and `scholar`. On the owner's PC they sit side by side in `C:/Users/sruon/Documents/GitHub/Vault/`.
+This repository is one brick of Vault, the owner's platform for capturing retail FFXI and keeping the captures for the long term. The core repository is `ffxi-dev/vault`; the bricks are `lens`, `res`, `xicap`, `pilot`, `patch`, `mogsafe`, `memoria`, `packets`, and `scholar`.
 
-- **CI** calls shared workflows from `ffxi-dev/vault` (`uses: ffxi-dev/vault/.github/workflows/<name>.yml@ci/v1`). Change CI logic there, not here.
+- **CI** is this repository's own: it is public, and the shared workflows in `ffxi-dev/vault` are private.
 - **Contracts** come from `ffxi-dev/vault` at a tagged release. Pin a tag; never copy a schema in.
 - **Specs.** A behavior change to this brick gets an OpenSpec change in this repository's `openspec/` (run `openspec init` the first time). A change that spans bricks goes in `ffxi-dev/vault`'s `openspec/`.
-- **Private.** Every Vault repository is private. Never commit credentials, and never make a repository public without the owner.
+- **Public, AGPL-3.0.** Never commit credentials. Cases come from public Mogsafe captures only.
 - **Commits** are small and say why. Every bug fix adds a test that fails without it. Match the surrounding code.
 - **Writing** (docs, commit messages, UI text) follows the rules in `ffxi-dev/vault`'s AGENTS.md: short plain words, active voice, no filler.
