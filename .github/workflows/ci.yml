@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
 
-# lsb's runners while the repository is private; they refuse public repositories, which GitHub's run free.
+# lsb's runners while the repository is private. They refuse public ones, which GitHub runs for free.
 jobs:
   js:
     runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted","lsb"]') || 'ubuntu-latest' }}

@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { decode } from './decoder.js';
 
-// Helpers for building synthetic schemas. Mirrors the shape of XiPackets-
-// definitions JSON entries — any test schema can be hand-crafted here.
+// Builders for hand-made layouts in the shape of XiPackets-definitions entries.
 
 const u = (name, bits, type_name = `uint${bits}_t`) => ({
   name,
@@ -62,7 +61,7 @@ describe('decoder primitives', () => {
     });
   });
 
-  test('decodes consecutive u8 fields with correct bitOffsets', () => {
+  test('gives consecutive u8 fields their bitOffsets', () => {
     const tree = decode(
       new Uint8Array([0x11, 0x22, 0x33]),
       packet('P', [u('a', 8), u('b', 8), u('c', 8)]),
@@ -85,19 +84,19 @@ describe('decoder primitives', () => {
     // 8-bit -1 = 0xFF
     const negTree = decode(new Uint8Array([0xff]), packet('P', [s('v', 8)]));
     expect(negTree.children[0].value).toBe(-1);
-    // 8-bit 127 = 0x7F (positive boundary)
+    // 8-bit 127 = 0x7F, the largest positive
     const posTree = decode(new Uint8Array([0x7f]), packet('P', [s('v', 8)]));
     expect(posTree.children[0].value).toBe(127);
   });
 
-  test('decodes IEEE 754 float (byte-aligned)', () => {
+  test('decodes an IEEE 754 float', () => {
     // 1.0f LE = 0x00 0x00 0x80 0x3F
     const tree = decode(new Uint8Array([0x00, 0x00, 0x80, 0x3f]), packet('P', [float('x')]));
     expect(tree.children[0].value).toBeCloseTo(1.0);
   });
 
-  test('float aligns to byte boundary even after odd-bit fields', () => {
-    // 1 bit + padding to 8 + 4 bytes float
+  test('aligns a float to the next byte after a bitfield', () => {
+    // 1 bit, 7 bits of padding, then a 4-byte float
     const fields = [u('flag', 1, 'uint8_t'), float('x')];
     const buf = new Uint8Array([0x01, 0x00, 0x00, 0x80, 0x3f]);
     const tree = decode(buf, packet('P', fields));
@@ -107,15 +106,15 @@ describe('decoder primitives', () => {
 });
 
 describe('decoder strings', () => {
-  test('decodes a fixed-length null-terminated char array', () => {
-    // "Hi\0\0\0" — JSON-stringified
+  test('decodes a NUL-terminated char array', () => {
+    // "Hi\0\0\0"; value holds the text JSON-quoted
     const buf = new Uint8Array([0x48, 0x69, 0x00, 0x00, 0x00]);
     const tree = decode(buf, packet('P', [charArr('s', 5)]));
     expect(tree.children[0].value).toBe('"Hi"');
     expect(tree.children[0].bits).toBe(40);
   });
 
-  test('handles char array with no null terminator (uses full length)', () => {
+  test('reads a char array with no NUL to its full length', () => {
     const buf = new Uint8Array([0x41, 0x42, 0x43]); // "ABC"
     const tree = decode(buf, packet('P', [charArr('s', 3)]));
     expect(tree.children[0].value).toBe('"ABC"');
@@ -156,7 +155,7 @@ describe('decoder nested structs', () => {
 });
 
 describe('decoder unions', () => {
-  test('selects variant by discriminator and pads to size', () => {
+  test('picks the variant by discriminator and pads it to the union size', () => {
     // 1 byte discriminator + 4 bytes union (size_bytes=4)
     const variantA = { discriminator_value: 1, name: 'A', fields: [u('a_val', 32)] };
     const variantB = { discriminator_value: 2, name: 'B', fields: [u('b_val', 16)] };
@@ -187,7 +186,7 @@ describe('decoder unions', () => {
     expect(treeB.children[1].bits).toBe(32);
   });
 
-  test('records placeholder when no variant matches discriminator', () => {
+  test('leaves a placeholder when no variant matches', () => {
     const fields = [
       u('kind', 8),
       {
@@ -210,7 +209,7 @@ describe('decoder unions', () => {
 
 describe('decoder edge cases', () => {
   test('gives fields past the end no value', () => {
-    // Schema asks for 4 bytes, only 2 provided: b runs past the end.
+    // The layout needs 8 bytes and the packet has 2: b runs past the end.
     const buf = new Uint8Array([0xab, 0xcd]);
     const tree = decode(buf, packet('P', [u('a', 8), u('b', 16), u('c', 8), charArr('s', 4)]));
     expect(tree.children.map((c) => c.value)).toEqual([0xab, null, null, null]);
@@ -233,7 +232,7 @@ describe('decoder edge cases', () => {
     expect(tree.error).toMatch(/not iterable/);
   });
 
-  test('root node exposes total bits read', () => {
+  test('the root holds the number of bits read', () => {
     const tree = decode(
       new Uint8Array([1, 2, 3, 4]),
       packet('P', [u('a', 8), u('b', 16), u('c', 8)]),
@@ -241,7 +240,7 @@ describe('decoder edge cases', () => {
     expect(tree.bits).toBe(32);
   });
 
-  test('marks enum types in the type label', () => {
+  test('gives an enum its base type in the type label', () => {
     const fields = [
       { name: 'kind', type_name: 'kind_t', base_type: 'uint16', bits: 16, is_enum: true },
     ];

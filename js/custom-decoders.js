@@ -1,8 +1,7 @@
-// Custom decoders for packets whose payload is a variable-length bitstream
-// that the schema can't describe. Each decoder augments the schema-decoded
-// tree with additional children parsed from the bitstream.
+// Decoders for packets whose payload is a variable-length bitstream a layout cannot describe. Each
+// adds the bitstream's fields to the tree the layout gave.
 //
-// A decoder is register(direction, packetId, fn), fn(raw, schemaTree) returning the augmented tree, and
+// A decoder is register(direction, packetId, fn), where fn(raw, tree) returns the new tree, and
 // registerFields with the field names it adds, for findPacketTypesWithField.
 
 import { DIR_IN, packetKey } from './keys.js';
@@ -14,8 +13,7 @@ function register(dir, pid, fn) {
   registry.set(packetKey(dir, pid), fn);
 }
 
-// Field names produced by custom decoders, keyed by packetKey(dir, pid).
-// Used by findPacketTypesWithField to include custom-decoded fields in filter lookups.
+// The field names each custom decoder adds, by packetKey(dir, pid), for findPacketTypesWithField.
 const fieldNames = new Map();
 
 function registerFields(dir, pid, names) {
@@ -26,7 +24,7 @@ export function hasCustomDecoder(dir, pid) {
   return registry.has(packetKey(dir, pid));
 }
 
-// Returns packet type keys that have a custom-decoded field with this name.
+// The packetKey of every custom decoder that adds a field of this name.
 export function customPacketTypesWithField(fieldName) {
   const keys = [];
   for (const [key, names] of fieldNames) {
@@ -45,8 +43,6 @@ export function applyCustomDecoder(dir, pid, raw, tree) {
   }
 }
 
-// --- Helpers ---
-
 function leaf(name, value, type = 'uint32_t') {
   return { name, type, value, bitOffset: 0, bits: 0 };
 }
@@ -55,7 +51,7 @@ function group(name, children, type = 'struct') {
   return { name, type, bitOffset: 0, bits: 0, children };
 }
 
-// --- 0x028 GP_SERV_COMMAND_BATTLE2 (Action packet) ---
+// --- 0x028 GP_SERV_COMMAND_BATTLE2, the action packet ---
 
 const ACTION_NAMES = {
   0: 'None',
@@ -135,7 +131,7 @@ register(DIR_IN, 0x028, (raw, tree) => {
         leaf('bit', r.read(31)),
       ];
 
-      // Miss name annotation
+      // Lens shows the miss's name in its type.
       const missVal = fields[0].value;
       fields[0] = leaf('miss', missVal, `uint8_t /* ${MISS_NAMES[missVal] ?? missVal} */`);
 
@@ -183,7 +179,6 @@ register(DIR_IN, 0x028, (raw, tree) => {
     group('targets', targets, `target[${targetCount}]`),
   ]);
 
-  // Augment: append bitstream decode as a child of the root tree.
   return {
     ...tree,
     children: [...(tree.children || []), bitstreamNode],

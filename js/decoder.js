@@ -1,17 +1,17 @@
-// Decodes a raw FFXI packet against an XiPackets schema entry.
+// Decodes a packet's bytes with an XiPackets layout.
 //
 // Returns a tree of nodes:
 //   { name, type, value?, children?, bitOffset, bits }
 //
-// Layout rules derived from the schema:
-// - Fields are read as a sequential LSB-first bitstream (x86 bitfield layout).
-// - `bits` on a primitive is the width in bits for that field.
+// How a layout reads:
+// - Fields are one LSB-first bitstream, read in order, as x86 lays out bitfields.
+// - `bits` on a primitive is its width.
 // - `array_size` with a primitive base_type => array_size elements each `bits` wide.
-// - `array_size` with `nested_fields` => array_size repetitions of the struct.
-// - `nested_fields` with `bits=0` and `array_size=null` => a single inline struct.
-// - `is_union=true` => read `discriminator_field` from the current sibling context,
-//   select the matching variant, and advance to size_bytes*8 bits total.
-// - `base_type === 'char'` with `array_size` => interpret as a null-terminated string.
+// - `array_size` with `nested_fields` => array_size copies of the struct.
+// - `nested_fields` without `array_size` => one inline struct.
+// - `is_union=true` => the variant whose discriminator_value matches the earlier sibling named by
+//   `discriminator_field`; a variant shorter than size_bytes is padded to it.
+// - `base_type === 'char'` with `array_size` => NUL-terminated text, byte-aligned.
 // - `base_type === 'float'` => IEEE 754 single precision, 32 bits, byte-aligned.
 // - `is_enum=true` => read the underlying integer.
 // - A primitive with `bits=0`, such as some enums, is `size_bytes` wide.
@@ -55,7 +55,6 @@ function decodeFields(reader, fields, out) {
 function decodeField(reader, f, context) {
   const bitOffset = reader.pos;
 
-  // Fixed-length arrays
   if (f.array_size != null) {
     if (f.base_type === 'char') {
       reader.alignToByte();
@@ -117,7 +116,6 @@ function decodeField(reader, f, context) {
     };
   }
 
-  // Nested inline struct
   if (f.nested_fields) {
     const startPos = reader.pos;
     const children = [];
@@ -131,7 +129,6 @@ function decodeField(reader, f, context) {
     };
   }
 
-  // Union
   if (f.is_union && Array.isArray(f.union_variants)) {
     const disc = context.get(f.discriminator_field);
     const variant = f.union_variants.find((v) => v.discriminator_value === disc);
@@ -151,7 +148,6 @@ function decodeField(reader, f, context) {
 
     const children = [];
     decodeFields(reader, variant.fields, children);
-    // Advance to end of union if variant was smaller than union size
     const consumed = reader.pos - startPos;
     if (unionBits > 0 && consumed < unionBits) {
       reader.pos = startPos + unionBits;
@@ -165,7 +161,6 @@ function decodeField(reader, f, context) {
     };
   }
 
-  // Primitive (including enums — underlying type is integer)
   const bits = f.bits || (f.size_bytes ?? 0) * 8;
   const value = readElement(reader, f, bits);
   const typeLabel = f.is_enum ? `${f.type_name} (${f.base_type})` : f.type_name;
