@@ -1,8 +1,7 @@
 // Sequential LSB-first bit reader (x86 bitfield layout).
 //
 // Used by both the schema-driven decoder and the custom-decoder bitstream
-// parsers. Reads up to ~53 bits per call; the caller is responsible for
-// splitting wider reads (see readIntBits in parser/decoder.js).
+// parsers. Reads up to 53 bits per call; readIntBits in decoder.js splits wider reads.
 export class BitReader {
   constructor(bytes) {
     this.bytes = bytes;

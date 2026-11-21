@@ -82,6 +82,9 @@ def _applies(layout: dict, v: tuple[int, int]) -> bool:
 # --- packet by packet ----------------------------------------------------------------------------
 
 
+WIDE = 53  # bits a JavaScript number holds exactly: a wider integer is given as its decimal text
+
+
 class _Reader:
     """LSB-first bit reader; bits past the end read as zero, as BitReader in js/bitreader.js."""
 
@@ -125,10 +128,10 @@ def _read_element(r: _Reader, f: dict, bits: int):
         r.pos += bits
         return None
     v = r.read(bits)
-    # js/decoder.js applies the sign only up to 53 bits.
-    if f.get("signed") and bits <= 53 and v >= 1 << (bits - 1):
+    if f.get("signed") and v >= 1 << (bits - 1):
         v -= 1 << bits
-    return v
+    # Wider than a JavaScript number holds exactly: its decimal text, as js/decoder.js's fields() gives it.
+    return str(v) if bits > WIDE else v
 
 
 def _elem_bits(f: dict) -> float:
@@ -334,7 +337,12 @@ class _Columns:
         if bits <= 0:
             return np.zeros(len(rows), dtype=np.uint64), None, pos
         v = self.ints(rows, pos, bits)
-        if f.get("signed") and bits <= 53:
+        if bits > WIDE:  # its decimal text, as _read_element gives it
+            n = [int(x) for x in v.tolist()]
+            if f.get("signed"):
+                n = [x - (1 << bits) if x >= 1 << (bits - 1) else x for x in n]
+            v = np.array([str(x) for x in n], dtype=object)
+        elif f.get("signed"):
             v = v.astype(np.int64)
             v = np.where(v >= 1 << (bits - 1), v - (1 << bits), v)
         return v, self.lengths[rows] * 8 >= pos + bits, pos + bits
@@ -381,11 +389,14 @@ class _Columns:
 
 
 def decode_column(raws: Sequence[bytes], layout: dict) -> dict[str, np.ndarray]:
-    """Every packet's fields at once, for a layout `is_fixed` accepts.
+    """Every packet's fields at once, for a layout `is_fixed` accepts. A custom decoder's fields, such as
+    0x028's, come only from decode_packet and Decoder.decode.
 
     Returns a column per field path. A column is a masked array where some packets have no value: a
     field past the packet's end, or a union field another variant holds.
     """
+    if _fixed_end(layout["fields"], 0) is None:
+        raise ValueError(f"{layout.get('name')}'s offsets depend on the data: decode it with decode_packet")
     n = len(raws)
     lengths = np.fromiter((len(r) for r in raws), dtype=np.int64, count=n)
     width = max(int(lengths.max(initial=0)), (_fixed_end(layout["fields"], 0) + 7) // 8) + 8

@@ -13,8 +13,10 @@
 //   select the matching variant, and advance to size_bytes*8 bits total.
 // - `base_type === 'char'` with `array_size` => interpret as a null-terminated string.
 // - `base_type === 'float'` => IEEE 754 single precision, 32 bits, byte-aligned.
-// - `is_enum=true` => read underlying integer, display raw value for now.
+// - `is_enum=true` => read the underlying integer.
 // - A primitive with `bits=0`, such as some enums, is `size_bytes` wide.
+// - A number wider than 53 bits is a BigInt, which fields() gives as its decimal text: a number cannot hold
+//   it exactly, and Python's decoder gives the same text.
 // - A field past the packet's end has no value (null), since many packets send only some parts of their
 //   layout. A number needs all its bits inside the packet; text keeps what is inside, and empty text,
 //   such as the name of an NPC update that sends none, has no value.
@@ -198,18 +200,14 @@ function readIntBits(reader, bits, signed) {
     return null;
   }
   if (bits > 53) {
-    // JS number precision cap — read as lo/hi. Precision lost above 2^53.
-    const lo = reader.readBits(32);
-    const hi = reader.readBits(bits - 32);
-    const combined = hi * 0x100000000 + lo;
-    return combined;
+    // Wider than a number holds exactly: a BigInt, which fields() gives as its decimal text.
+    const lo = BigInt(reader.readBits(32));
+    const hi = BigInt(reader.readBits(bits - 32));
+    const v = (hi << 32n) | lo;
+    return signed ? BigInt.asIntN(bits, v) : v;
   }
-  let v = reader.readBits(bits);
-  if (signed && bits < 64) {
-    const signBit = Math.pow(2, bits - 1);
-    if (v >= signBit) v -= Math.pow(2, bits);
-  }
-  return v;
+  const v = reader.readBits(bits);
+  return signed && v >= 2 ** (bits - 1) ? v - 2 ** bits : v;
 }
 
 // What Lens shows for a packet: the layout's fields, then a custom decoder's, if the opcode has one.
@@ -231,6 +229,7 @@ export function fields(tree) {
       if (c.children) walk(c, p);
       else if (c.text !== undefined) out[p] = c.text;
       else if (typeof c.value === 'number') out[p] = c.value;
+      else if (typeof c.value === 'bigint') out[p] = c.value.toString();
     }
   };
   walk(tree, '');

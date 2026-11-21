@@ -15,7 +15,11 @@ function decodeCase(c) {
 }
 
 describe('test cases', () => {
-  setSchemas({ s2c: read('schemas/s2c.json'), c2s: read('schemas/c2s.json') });
+  setSchemas({
+    s2c: read('schemas/s2c.json'),
+    c2s: read('schemas/c2s.json'),
+    layouts: read('schemas/layouts.json'),
+  });
   const files = readdirSync(new URL('../cases', import.meta.url)).filter((f) =>
     f.endsWith('.json'),
   );
