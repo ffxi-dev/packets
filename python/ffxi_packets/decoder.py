@@ -4,8 +4,9 @@ A field past the packet's end has no value, since many packets send only some pa
 number needs all its bits inside the packet, and text keeps what is inside; empty text has none.
 
 Fixed layouts decode a whole column of packets at once: numpy reads each field from every packet with
-shifts and masks. Layouts whose size varies (a union smaller than its variants) and opcodes with a
-custom decoder, such as 0x028, decode packet by packet. Field names are paths, such as
+shifts and masks. A union smaller than its variants is fixed too when nothing follows it, as in 0x063.
+Layouts whose offsets depend on the data otherwise, and opcodes with a custom decoder, such as 0x028,
+decode packet by packet. Field names are paths, such as
 `SendFlg.Position`, `GrapIDTbl[3]` or `Data.name`, as `fields()` in js/decoder.js gives them.
 """
 
@@ -253,9 +254,11 @@ _CUSTOM = {(DIR_IN, 0x028): _action}
 # --- whole columns -------------------------------------------------------------------------------
 
 
-def _fixed_end(fields: list, pos: int) -> int | None:
-    """Where `fields` end when read from bit `pos`, or None when that depends on the packet."""
-    for f in fields:
+def _fixed_end(fields: list, pos: int, tail: bool = False) -> int | None:
+    """Where `fields` end when read from bit `pos`, at the latest, or None when that depends on the packet.
+    With `tail`, nothing follows them: a last union's variants may then run past its size."""
+    for k, f in enumerate(fields):
+        last = tail and k == len(fields) - 1
         if f.get("array_size") is not None:
             n = f["array_size"]
             if f.get("base_type") == "char":
@@ -272,16 +275,15 @@ def _fixed_end(fields: list, pos: int) -> int | None:
                         return None
                     pos = _element_end(f, int(bits), pos)
         elif f.get("nested_fields"):
-            pos = _fixed_end(f["nested_fields"], pos)
+            pos = _fixed_end(f["nested_fields"], pos, last)
             if pos is None:
                 return None
         elif f.get("is_union") and isinstance(f.get("union_variants"), list):
             size = (f.get("size_bytes") or 0) * 8
-            for v in f["union_variants"]:
-                end = _fixed_end(v["fields"], pos)
-                if not size or end is None or end - pos > size:
-                    return None
-            pos += size
+            ends = [_fixed_end(v["fields"], pos) for v in f["union_variants"]]
+            if not size or None in ends or (not last and max(ends, default=pos) - pos > size):
+                return None
+            pos = max([pos + size, *ends])
         else:
             pos = _element_end(f, f.get("bits") or (f.get("size_bytes") or 0) * 8, pos)
     return pos
@@ -295,7 +297,7 @@ def _element_end(f: dict, bits: int, pos: int) -> int:
 
 def is_fixed(layout: dict, direction: int, opcode: int) -> bool:
     """Whether `decode_column` can read this layout: every field sits at the same place in every packet."""
-    return (direction, opcode) not in _CUSTOM and _fixed_end(layout["fields"], 0) is not None
+    return (direction, opcode) not in _CUSTOM and _fixed_end(layout["fields"], 0, True) is not None
 
 
 class _Columns:
@@ -395,11 +397,12 @@ def decode_column(raws: Sequence[bytes], layout: dict) -> dict[str, np.ndarray]:
     Returns a column per field path. A column is a masked array where some packets have no value: a
     field past the packet's end, empty text, or a union field another variant holds.
     """
-    if _fixed_end(layout["fields"], 0) is None:
+    end = _fixed_end(layout["fields"], 0, True)
+    if end is None:
         raise ValueError(f"{layout.get('name')}'s offsets depend on the data: decode it with decode_packet")
     n = len(raws)
     lengths = np.fromiter((len(r) for r in raws), dtype=np.int64, count=n)
-    width = max(int(lengths.max(initial=0)), (_fixed_end(layout["fields"], 0) + 7) // 8) + 8
+    width = max(int(lengths.max(initial=0)), (end + 7) // 8) + 8
     mat = np.zeros((n, width), dtype=np.uint8)
     # Packets of one length stack into a block; an opcode comes in a few lengths at most.
     for length in np.unique(lengths):
