@@ -1,12 +1,17 @@
 // Reads bits LSB-first, as x86 lays out bitfields. decoder.js and custom-decoders.js both use it.
 // A read is exact up to 53 bits; readIntBits in decoder.js splits wider reads.
 export class BitReader {
+  /** @param {Uint8Array} bytes */
   constructor(bytes) {
     this.bytes = bytes;
     this.pos = 0;
     this.totalBits = bytes.length * 8;
   }
 
+  /**
+   * @param {number} n
+   * @returns {number}
+   */
   readBits(n) {
     if (n === 0) return 0;
     let value = 0;
@@ -32,6 +37,10 @@ export class BitReader {
     return value;
   }
 
+  /**
+   * @param {number} n
+   * @returns {number}
+   */
   read(n) {
     return this.readBits(n);
   }
@@ -40,6 +49,7 @@ export class BitReader {
     this.pos = (this.pos + 7) & ~7;
   }
 
+  /** @param {number} byteOffset */
   setBytePos(byteOffset) {
     this.pos = byteOffset * 8;
   }

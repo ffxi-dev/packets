@@ -1,0 +1,15 @@
+{
+  "include": ["js"],
+  "exclude": ["js/*.test.js"],
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationDir": "types",
+    "rootDir": "js",
+    "module": "nodenext",
+    "target": "es2022"
+  }
+}

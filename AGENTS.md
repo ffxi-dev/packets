@@ -7,6 +7,7 @@ packets holds the FFXI packet definitions Vault decodes with, the test cases tha
 ```bash
 npm ci
 npm run lint && npm run format:check && npm test             # JavaScript: eslint, prettier, vitest
+npm run types                                                # check the JSDoc types and write types/
 
 uv sync
 uv run ruff check . && uv run ruff format --check . && uv run pytest -q   # Python
@@ -21,7 +22,8 @@ CI (`.github/workflows/ci.yml`) runs both on every pull request.
 - `schemas/s2c.json`, `schemas/c2s.json` — today's retail layouts, in XiPackets' format. This repository is their source: edit them here, with a test case for each change.
 - `schemas/layouts.json` — older layouts, each an XiPackets entry with `direction` (`s2c` or `c2s`) and either `until` (the first client version that no longer uses it) or `from` (the first that does). The first entry that applies wins; with none, today's layout applies. Client versions compare as `30251101_2`; any other string, such as a captain log's build, gets today's layouts.
 - `cases/<direction>-0x<OPCODE>.json` — test cases: real packets from public Mogsafe captures, each with its capture id, its index in the capture (counting from 0 across every channel, as Lens's `#packet=` links do), its client version, its bytes in hex, and the fields it decodes to by path (`SendFlg.Position`, `GrapIDTbl[3]`, `Data.name`); fields with no value are left out. `cases/versions.json` holds test layouts and cases for picking a layout by client version.
-- `js/` — the JavaScript decoder: `decoder.js` walks a layout over the bytes, `custom-decoders.js` adds the bitstream fields a layout cannot describe (`0x028`), `schema.js` loads the layouts and picks one by client version.
+- `js/` — the JavaScript decoder: `decoder.js` walks a layout over the bytes, `custom-decoders.js` adds the bitstream fields a layout cannot describe (`0x028`), `schema.js` loads the layouts and picks one by client version. Its types are JSDoc, which tsc checks strictly.
+- `types/` — the `.d.ts` files `npm run types` writes from that JSDoc. Commit them with the change; CI fails when they differ. `scripts/check-types.ts` uses them as a consumer would and checks that the shipped layouts fit `Schema`.
 - `python/ffxi_packets/` — the Python decoder. Fixed layouts decode a whole column of packets at once with numpy; layouts whose offsets depend on the data (a union variant larger than its union) and opcodes with a custom decoder decode packet by packet. `Decoder.sizes` counts packets by client version, direction, opcode, and size.
 
 ## Rules
