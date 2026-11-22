@@ -26,12 +26,14 @@ const layout = lookup(DIR_IN, 0x00e, '30261006_0');
 fields(decodePacket(bytes, layout, DIR_IN, 0x00e))['UniqueNo'];
 ```
 
+The JavaScript ships its TypeScript types in `types/`: `lookup` gives a `Schema` or `null`, `decodePacket` a `Node`.
+
 Pin a release tag: releases change what packets decode to, and both decoders move together.
 
 ## Work on it
 
 ```bash
-npm ci && npm run lint && npm run format:check && npm test
+npm ci && npm run lint && npm run format:check && npm test && npm run types
 uv sync && uv run ruff check . && uv run ruff format --check . && uv run pytest -q
 node scripts/case.mjs <s2c|c2s> <opcode> <client version> <hex> [capture] [index]   # print a new case
 ```

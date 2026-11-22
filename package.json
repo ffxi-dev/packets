@@ -1,29 +1,36 @@
 {
   "name": "@ffxi-dev/packets",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "FFXI packet definitions and the JavaScript decoder Lens uses",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./js/index.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./js/index.js"
+    },
     "./schemas/*": "./schemas/*"
   },
+  "types": "./types/index.d.ts",
   "files": [
     "js",
     "!js/*.test.js",
-    "schemas"
+    "schemas",
+    "types"
   ],
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "types": "tsc && tsc --ignoreConfig --noEmit --strict --module nodenext --resolveJsonModule scripts/check-types.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "eslint": "^9.39.4",
     "globals": "^17.6.0",
     "prettier": "^3.8.3",
+    "typescript": "^7.0.2",
     "vitest": "^3.2.4"
   }
 }

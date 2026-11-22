@@ -24,9 +24,38 @@
 import { BitReader } from './bitreader.js';
 import { applyCustomDecoder, hasCustomDecoder } from './custom-decoders.js';
 
+/** @import { Direction } from './keys.js' */
+/** @import { Field, Schema } from './schema.js' */
+
+/**
+ * A decoded value: a number, a BigInt past 53 bits, text quoted as JSON or a union's missing variant, or
+ * null past the packet's end and for empty text.
+ * @typedef {number | bigint | string | null} Value
+ */
+
+/**
+ * A node of a decoded packet: a field and its value, or a struct, array, or union and its children.
+ * @typedef {object} Node
+ * @property {string} name The field's name; `[i]` for an array's element.
+ * @property {string} type Its C type, as the layout names it.
+ * @property {number} bitOffset Where it starts, in bits from the packet's start. 0 in a custom decoder's nodes.
+ * @property {number} bits How wide it is. 0 in a custom decoder's nodes.
+ * @property {Value} [value]
+ * @property {string} [text] Text's own string, unquoted.
+ * @property {Node[]} [children]
+ * @property {string} [error] On the root: why decoding stopped.
+ */
+
+/**
+ * @param {Uint8Array} bytes
+ * @param {Schema} packet
+ * @returns {Node}
+ */
 export function decode(bytes, packet) {
   const reader = new BitReader(bytes);
+  /** @type {Node[]} */
   const children = [];
+  /** @type {Node} */
   const root = {
     name: packet.name,
     type: packet.id,
@@ -37,13 +66,19 @@ export function decode(bytes, packet) {
   try {
     decodeFields(reader, packet.fields, children);
   } catch (e) {
-    root.error = String(e && e.message ? e.message : e);
+    root.error = String(e instanceof Error && e.message ? e.message : e);
   }
   root.bits = reader.pos;
   return root;
 }
 
+/**
+ * @param {BitReader} reader
+ * @param {Field[]} fields
+ * @param {Node[]} out
+ */
 function decodeFields(reader, fields, out) {
+  /** @type {Map<unknown, Value>} */
   const context = new Map();
   for (const f of fields) {
     const node = decodeField(reader, f, context);
@@ -52,6 +87,12 @@ function decodeFields(reader, fields, out) {
   }
 }
 
+/**
+ * @param {BitReader} reader
+ * @param {Field} f
+ * @param {Map<unknown, Value>} context
+ * @returns {Node}
+ */
 function decodeField(reader, f, context) {
   const bitOffset = reader.pos;
 
@@ -77,6 +118,7 @@ function decodeField(reader, f, context) {
       };
     }
 
+    /** @type {Node[]} */
     const children = [];
     const startPos = reader.pos;
     const elemBits =
@@ -84,6 +126,7 @@ function decodeField(reader, f, context) {
 
     for (let i = 0; i < f.array_size; i++) {
       if (f.nested_fields) {
+        /** @type {Node[]} */
         const sub = [];
         const elStart = reader.pos;
         decodeFields(reader, f.nested_fields, sub);
@@ -118,6 +161,7 @@ function decodeField(reader, f, context) {
 
   if (f.nested_fields) {
     const startPos = reader.pos;
+    /** @type {Node[]} */
     const children = [];
     decodeFields(reader, f.nested_fields, children);
     return {
@@ -146,6 +190,7 @@ function decodeField(reader, f, context) {
       };
     }
 
+    /** @type {Node[]} */
     const children = [];
     decodeFields(reader, variant.fields, children);
     const consumed = reader.pos - startPos;
@@ -173,6 +218,12 @@ function decodeField(reader, f, context) {
   };
 }
 
+/**
+ * @param {BitReader} reader
+ * @param {Field} f
+ * @param {number} bits
+ * @returns {number | bigint | null}
+ */
 function readElement(reader, f, bits) {
   if (f.base_type === 'float') {
     reader.alignToByte();
@@ -188,6 +239,12 @@ function readElement(reader, f, bits) {
   return readIntBits(reader, bits, f.signed);
 }
 
+/**
+ * @param {BitReader} reader
+ * @param {number} bits
+ * @param {boolean | undefined} signed
+ * @returns {number | bigint | null}
+ */
 function readIntBits(reader, bits, signed) {
   if (bits <= 0) return 0;
   if (reader.pos + bits > reader.totalBits) {
@@ -205,7 +262,14 @@ function readIntBits(reader, bits, signed) {
   return signed && v >= 2 ** (bits - 1) ? v - 2 ** bits : v;
 }
 
-// What Lens shows for a packet: the layout's fields, then a custom decoder's, if the opcode has one.
+/**
+ * What Lens shows for a packet: the layout's fields, then a custom decoder's, if the opcode has one.
+ * @param {Uint8Array} raw
+ * @param {Schema} packet
+ * @param {Direction} direction
+ * @param {number} packetId
+ * @returns {Node}
+ */
 export function decodePacket(raw, packet, direction, packetId) {
   const tree = decode(raw, packet);
   return hasCustomDecoder(direction, packetId)
@@ -213,11 +277,20 @@ export function decodePacket(raw, packet, direction, packetId) {
     : tree;
 }
 
-// The decoded values by path, such as `SendFlg.Position`, `GrapIDTbl[3]` or `Data.name`: what a test
-// case lists. Text is plain, not quoted. Fields with no value are left out: those past the packet's end,
-// and a union with no matching variant.
+/**
+ * The decoded values by path, such as `SendFlg.Position`, `GrapIDTbl[3]` or `Data.name`: what a test
+ * case lists. Text is plain, not quoted. Fields with no value are left out: those past the packet's end,
+ * and a union with no matching variant.
+ * @param {Node} tree
+ * @returns {Record<string, number | string>}
+ */
 export function fields(tree) {
+  /** @type {Record<string, number | string>} */
   const out = {};
+  /**
+   * @param {Node} node
+   * @param {string} path
+   */
   const walk = (node, path) => {
     for (const c of node.children ?? []) {
       const p = c.name.startsWith('[') ? path + c.name : path ? `${path}.${c.name}` : c.name;

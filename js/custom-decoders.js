@@ -7,24 +7,52 @@
 import { DIR_IN, packetKey } from './keys.js';
 import { BitReader } from './bitreader.js';
 
+/** @import { Direction } from './keys.js' */
+/** @import { Node } from './decoder.js' */
+
+/** @typedef {(raw: Uint8Array, tree: Node) => Node} CustomDecoder */
+
+/** @type {Map<number, CustomDecoder>} */
 const registry = new Map();
 
+/**
+ * @param {Direction} dir
+ * @param {number} pid
+ * @param {CustomDecoder} fn
+ */
 function register(dir, pid, fn) {
   registry.set(packetKey(dir, pid), fn);
 }
 
-// The field names each custom decoder adds, by packetKey(dir, pid), for findPacketTypesWithField.
+/**
+ * The field names each custom decoder adds, by packetKey(dir, pid), for findPacketTypesWithField.
+ * @type {Map<number, Set<string>>}
+ */
 const fieldNames = new Map();
 
+/**
+ * @param {Direction} dir
+ * @param {number} pid
+ * @param {string[]} names
+ */
 function registerFields(dir, pid, names) {
   fieldNames.set(packetKey(dir, pid), new Set(names));
 }
 
+/**
+ * @param {Direction} dir
+ * @param {number} pid
+ * @returns {boolean}
+ */
 export function hasCustomDecoder(dir, pid) {
   return registry.has(packetKey(dir, pid));
 }
 
-// The packetKey of every custom decoder that adds a field of this name.
+/**
+ * The packetKey of every custom decoder that adds a field of this name.
+ * @param {string} fieldName
+ * @returns {number[]}
+ */
 export function customPacketTypesWithField(fieldName) {
   const keys = [];
   for (const [key, names] of fieldNames) {
@@ -33,6 +61,13 @@ export function customPacketTypesWithField(fieldName) {
   return keys;
 }
 
+/**
+ * @param {Direction} dir
+ * @param {number} pid
+ * @param {Uint8Array} raw
+ * @param {Node} tree
+ * @returns {Node}
+ */
 export function applyCustomDecoder(dir, pid, raw, tree) {
   const fn = registry.get(packetKey(dir, pid));
   if (!fn) return tree;
@@ -43,16 +78,27 @@ export function applyCustomDecoder(dir, pid, raw, tree) {
   }
 }
 
+/**
+ * @param {string} name
+ * @param {number} value
+ * @returns {Node}
+ */
 function leaf(name, value, type = 'uint32_t') {
   return { name, type, value, bitOffset: 0, bits: 0 };
 }
 
+/**
+ * @param {string} name
+ * @param {Node[]} children
+ * @returns {Node}
+ */
 function group(name, children, type = 'struct') {
   return { name, type, bitOffset: 0, bits: 0, children };
 }
 
 // --- 0x028 GP_SERV_COMMAND_BATTLE2, the action packet ---
 
+/** @type {Record<number, string>} */
 const ACTION_NAMES = {
   0: 'None',
   1: 'Attack',
@@ -71,6 +117,7 @@ const ACTION_NAMES = {
   15: 'Rune Fencer',
 };
 
+/** @type {Record<number, string>} */
 const MISS_NAMES = {
   0: 'hit',
   1: 'miss',
@@ -120,8 +167,10 @@ register(DIR_IN, 0x028, (raw, tree) => {
     const results = [];
 
     for (let ri = 0; ri < tgtResultCount; ri++) {
+      // Lens shows the miss's name in its type.
+      const miss = r.read(3);
       const fields = [
-        leaf('miss', r.read(3)),
+        leaf('miss', miss, `uint8_t /* ${MISS_NAMES[miss] ?? miss} */`),
         leaf('kind', r.read(2)),
         leaf('sub_kind', r.read(12)),
         leaf('info', r.read(5)),
@@ -130,10 +179,6 @@ register(DIR_IN, 0x028, (raw, tree) => {
         leaf('message', r.read(10)),
         leaf('bit', r.read(31)),
       ];
-
-      // Lens shows the miss's name in its type.
-      const missVal = fields[0].value;
-      fields[0] = leaf('miss', missVal, `uint8_t /* ${MISS_NAMES[missVal] ?? missVal} */`);
 
       if (r.read(1) > 0) {
         fields.push(
