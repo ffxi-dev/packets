@@ -1,0 +1,98 @@
+[
+  {
+    "capture": "AIxeAsqgUD5p",
+    "index": 190,
+    "client_version": "30261006_0",
+    "direction": "s2c",
+    "opcode": "0x067",
+    "hex": "670c09000305620062700f01000000000000000000000000",
+    "fields": {
+      "id": 103,
+      "size": 6,
+      "sync": 9,
+      "Mode": 3,
+      "Length": 20,
+      "data.ActIndex": 98,
+      "data.UniqueNo": 17789026,
+      "data.ActIndexTrustOwner": 0,
+      "data.padding00": 0,
+      "data.NameFlags": 0
+    }
+  },
+  {
+    "capture": "AIxeAsqgUD5p",
+    "index": 206,
+    "client_version": "30261006_0",
+    "direction": "s2c",
+    "opcode": "0x067",
+    "hex": "670c090003050d000d700f01000000000000000000000000",
+    "fields": {
+      "id": 103,
+      "size": 6,
+      "sync": 9,
+      "Mode": 3,
+      "Length": 20,
+      "data.ActIndex": 13,
+      "data.UniqueNo": 17788941,
+      "data.ActIndexTrustOwner": 0,
+      "data.padding00": 0,
+      "data.NameFlags": 0
+    }
+  },
+  {
+    "capture": "AIxeAsqgUD5p",
+    "index": 208,
+    "client_version": "30261006_0",
+    "direction": "s2c",
+    "opcode": "0x067",
+    "hex": "6714090002095904d934050000000000000000000000000000000000000000000000000000000001",
+    "fields": {
+      "id": 103,
+      "size": 10,
+      "sync": 9,
+      "Mode": 2,
+      "Length": 36,
+      "data.ActIndex": 1113,
+      "data.UniqueNo": 341209,
+      "data.ActIndexFellow": 0,
+      "data.padding00": 0,
+      "data.NameFlags": 0,
+      "data.NameIcon": 0,
+      "data.CustomProperties": 0,
+      "data.unknown1C": 0,
+      "data.UniqueNoMog": 0,
+      "data.MogHouseFlag": 0,
+      "data.mjob_lv": 0,
+      "data.unknown26": 0,
+      "data.MogExpansionFlag": 1
+    }
+  },
+  {
+    "capture": "AIxeAsqgUD5p",
+    "index": 280,
+    "client_version": "30261006_0",
+    "direction": "s2c",
+    "opcode": "0x067",
+    "hex": "67140c0002095a04bd4f080000000000000000000000000000000000000000000000000000630001",
+    "fields": {
+      "id": 103,
+      "size": 10,
+      "sync": 12,
+      "Mode": 2,
+      "Length": 36,
+      "data.ActIndex": 1114,
+      "data.UniqueNo": 544701,
+      "data.ActIndexFellow": 0,
+      "data.padding00": 0,
+      "data.NameFlags": 0,
+      "data.NameIcon": 0,
+      "data.CustomProperties": 0,
+      "data.unknown1C": 0,
+      "data.UniqueNoMog": 0,
+      "data.MogHouseFlag": 0,
+      "data.mjob_lv": 99,
+      "data.unknown26": 0,
+      "data.MogExpansionFlag": 1
+    }
+  }
+]
