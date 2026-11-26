@@ -56,8 +56,8 @@ import { DIR_IN, DIR_OUT, packetKey } from './keys.js';
 
 /**
  * An older layout, as layouts.json holds them: `until` is the first client version that no longer uses it,
- * `from` the first that does.
- * @typedef {Schema & { direction: 's2c' | 'c2s', until?: string, from?: string }} OlderSchema
+ * `from` the first that does. `direction` is `s2c` or `c2s`; it is typed string, as a JSON import types it.
+ * @typedef {Schema & { direction: string, until?: string, from?: string }} OlderSchema
  */
 
 /**

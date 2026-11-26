@@ -71,7 +71,7 @@ export type Schema = {
     fields: Field[];
 };
 export type OlderSchema = Schema & {
-    direction: 's2c' | 'c2s';
+    direction: string;
     until?: string;
     from?: string;
 };
