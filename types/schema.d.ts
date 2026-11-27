@@ -105,6 +105,15 @@ export declare function setSchemas({ s2c, c2s, layouts }: Schemas): SchemaIndex;
 export declare function loadSchemas(base?: string): Promise<SchemaIndex>;
 export type Version = [number, number];
 /**
+ * The client version a capture's layouts are picked by: its header's when it reads as one (`30211103_1`),
+ * else, for a captain build or an import that names none, the newest in live.json live when it began, or
+ * `0_0`, older than all of them. With no start either, the header as it is, which gets today's layouts.
+ * @param {string} clientVersion
+ * @param {number} [startMs] When the capture began, in Unix ms.
+ * @returns {string}
+ */
+export declare function captureVersion(clientVersion: string, startMs?: number): string;
+/**
  * The layout of this opcode for this client version, or null for an opcode no layout covers or before
  * loadSchemas or setSchemas.
  * @param {Direction} direction

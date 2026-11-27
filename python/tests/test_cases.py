@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from ffxi_packets import DIR_IN, DIR_OUT, Decoder, Definitions, decode_packet
+from ffxi_packets import DIR_IN, DIR_OUT, Decoder, Definitions, capture_version, decode_packet
 
 CASES = Path(__file__).parents[2] / "cases"
 DEFS = Definitions.load()
@@ -86,3 +86,8 @@ def test_packets_counted_by_version_opcode_and_size():
         (version, "s2c", 0x00E, 64): 1,
         (version, "s2c", 0x00E, 84): 1,
     }
+
+
+@pytest.mark.parametrize("c", load("versions.json")["capture_versions"], ids=lambda c: c["note"])
+def test_capture_version(c):
+    assert capture_version(c["client_version"], c["start_ms"]) == c["picks"]

@@ -2,7 +2,7 @@
 
 FFXI's network packets, defined once and decoded the same way in two languages:
 
-- `schemas/` holds every packet's layout, in [atom0s's XiPackets](https://github.com/atom0s/XiPackets) format: today's retail layouts in `s2c.json` and `c2s.json`, and older ones, by client version, in `layouts.json`.
+- `schemas/` holds every packet's layout, in [atom0s's XiPackets](https://github.com/atom0s/XiPackets) format: today's retail layouts in `s2c.json` and `c2s.json`, and older ones, by client version, in `layouts.json`. `live.json` has the day each of those versions went live, for a capture whose header names none.
 - `js/` is the JavaScript decoder [Lens](https://lens.sruon.dev) uses to show a capture's packets.
 - `python/ffxi_packets/` is the Python decoder [Scholar](https://scholar.sruon.dev) and [ffxi-dev/extractors](https://github.com/ffxi-dev/extractors) use. It decodes a whole column of one opcode's packets at once, with numpy.
 - `cases/` holds real packets from public [Mogsafe](https://mogsafe.sruon.dev) captures, each with the fields it decodes to. Both decoders must pass every case.
@@ -25,6 +25,8 @@ await loadSchemas('/schemas'); // where schemas/ is served
 const layout = lookup(DIR_IN, 0x00e, '30261006_0');
 fields(decodePacket(bytes, layout, DIR_IN, 0x00e))['UniqueNo'];
 ```
+
+A capture whose header names no client version, such as a PacketViewer import, picks its layouts by when it began: `captureVersion(header, startMs)` in JavaScript, `capture_version(header, start_ms)` in Python.
 
 The JavaScript ships its TypeScript types in `types/`: `lookup` gives a `Schema` or `null`, `decodePacket` a `Node`.
 

@@ -6,7 +6,7 @@ export default [
   js.configs.recommended,
   {
     languageOptions: {
-      ecmaVersion: 2024,
+      ecmaVersion: 2025,
       sourceType: 'module',
       globals: { ...globals.browser, ...globals.node },
     },

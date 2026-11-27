@@ -1,6 +1,6 @@
 {
   "name": "@ffxi-dev/packets",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "FFXI packet definitions and the JavaScript decoder Lens uses",
   "license": "AGPL-3.0-only",
   "private": true,
@@ -10,12 +10,14 @@
       "types": "./types/index.d.ts",
       "default": "./js/index.js"
     },
-    "./schemas/*": "./schemas/*"
+    "./schemas/*": "./schemas/*",
+    "./cases/*": "./cases/*"
   },
   "types": "./types/index.d.ts",
   "files": [
     "js",
     "!js/*.test.js",
+    "cases",
     "schemas",
     "types"
   ],

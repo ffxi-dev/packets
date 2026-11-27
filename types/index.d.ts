@@ -2,7 +2,7 @@ export { BitReader } from './bitreader.js';
 export { decode, decodePacket, fields } from './decoder.js';
 export { applyCustomDecoder, customPacketTypesWithField, hasCustomDecoder, } from './custom-decoders.js';
 export { DIR_IN, DIR_OUT, packetKey } from './keys.js';
-export { findPacketTypesWithField, loadSchemas, lookup, setSchemas } from './schema.js';
+export { captureVersion, findPacketTypesWithField, loadSchemas, lookup, setSchemas, } from './schema.js';
 export type Direction = import('./keys.js').Direction;
 export type Field = import('./schema.js').Field;
 export type Hints = import('./schema.js').Hints;
