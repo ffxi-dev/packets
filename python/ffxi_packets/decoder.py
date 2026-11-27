@@ -17,6 +17,8 @@ import re
 import struct
 from collections import Counter
 from collections.abc import Sequence
+from datetime import UTC, datetime
+from functools import cache
 from pathlib import Path
 
 import numpy as np
@@ -78,6 +80,26 @@ def _applies(layout: dict, v: tuple[int, int]) -> bool:
     if layout.get("from"):
         return v >= _version_key(layout["from"])
     return False
+
+
+@cache
+def _live() -> list[tuple[str, int]]:
+    """live.json: when each client version that starts or ends an older layout went live, in Unix ms at UTC
+    midnight of the update's day. Sorted by version."""
+    days = json.loads((_schemas_dir() / "live.json").read_text(encoding="utf-8"))
+    return [
+        (d["version"], int(datetime.fromisoformat(d["live"]).replace(tzinfo=UTC).timestamp() * 1000))
+        for d in days
+    ]
+
+
+def capture_version(client_version: str, start_ms: int | None = None) -> str:
+    """The client version a capture's layouts are picked by: its header's when it reads as one (`30211103_1`),
+    else, for a captain build or an import that names none, the newest in live.json live when it began, or
+    `0_0`, older than all of them. With no start either, the header as it is, which gets today's layouts."""
+    if _version_key(client_version) or not start_ms:
+        return client_version
+    return next((v for v, ms in reversed(_live()) if ms <= start_ms), "0_0")
 
 
 # --- packet by packet ----------------------------------------------------------------------------

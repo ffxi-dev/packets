@@ -229,5 +229,43 @@
         "f": 0
       }
     }
+  ],
+  "capture_versions": [
+    {
+      "client_version": "30211005_0",
+      "start_ms": 1636502400000,
+      "picks": "30211005_0",
+      "note": "a header that reads as a version wins over the start"
+    },
+    {
+      "client_version": "",
+      "start_ms": 1021507200000,
+      "picks": "0_0",
+      "note": "before every day in live.json: older than all of them"
+    },
+    {
+      "client_version": "",
+      "start_ms": 1636502399999,
+      "picks": "0_0",
+      "note": "just before Master Levels went live"
+    },
+    {
+      "client_version": "",
+      "start_ms": 1636502400000,
+      "picks": "30211103_1",
+      "note": "the day Master Levels went live"
+    },
+    {
+      "client_version": "Version 18:08:44 Nov 12 2025",
+      "start_ms": 1763337600000,
+      "picks": "30211103_1",
+      "note": "a captain build: by when it began"
+    },
+    {
+      "client_version": "",
+      "start_ms": 0,
+      "picks": "",
+      "note": "no version and no start: today's layouts"
+    }
   ]
 }

@@ -5,6 +5,7 @@
 // `until` (the first client version that no longer uses it) or `from` (the first that does). The first
 // entry that applies wins; with none, today's layout applies.
 
+import live from '../schemas/live.json' with { type: 'json' };
 import { customPacketTypesWithField } from './custom-decoders.js';
 import { DIR_IN, DIR_OUT, packetKey } from './keys.js';
 
@@ -156,6 +157,23 @@ function applies(layout, version) {
   if (layout.until) return before(version, /** @type {Version} */ (versionKey(layout.until)));
   if (layout.from) return !before(version, /** @type {Version} */ (versionKey(layout.from)));
   return false;
+}
+
+// live.json: when each client version that starts or ends an older layout went live, at UTC midnight of
+// the update's day. Sorted by version.
+const LIVE = live.map((l) => ({ version: l.version, ms: Date.parse(l.live) }));
+
+/**
+ * The client version a capture's layouts are picked by: its header's when it reads as one (`30211103_1`),
+ * else, for a captain build or an import that names none, the newest in live.json live when it began, or
+ * `0_0`, older than all of them. With no start either, the header as it is, which gets today's layouts.
+ * @param {string} clientVersion
+ * @param {number} [startMs] When the capture began, in Unix ms.
+ * @returns {string}
+ */
+export function captureVersion(clientVersion, startMs) {
+  if (versionKey(clientVersion) || !startMs) return clientVersion;
+  return LIVE.filter((l) => l.ms <= startMs).at(-1)?.version ?? '0_0';
 }
 
 /**

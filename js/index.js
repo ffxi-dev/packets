@@ -6,7 +6,13 @@ export {
   hasCustomDecoder,
 } from './custom-decoders.js';
 export { DIR_IN, DIR_OUT, packetKey } from './keys.js';
-export { findPacketTypesWithField, loadSchemas, lookup, setSchemas } from './schema.js';
+export {
+  captureVersion,
+  findPacketTypesWithField,
+  loadSchemas,
+  lookup,
+  setSchemas,
+} from './schema.js';
 
 /** @typedef {import('./keys.js').Direction} Direction */
 /** @typedef {import('./schema.js').Field} Field */
